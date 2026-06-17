@@ -1,10 +1,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <queue>
+#include <cmath>
 
 using namespace std;
 
-// 1. ESTRUCTURA DEL NODO (Tal cual tu especificación)
+// 1. ESTRUCTURA DEL NODO (Con nombre y rol)
 struct Nodo {
     int id;
     string nombre;
@@ -21,96 +23,86 @@ struct Nodo {
     }
 };
 
-// ALGORITMO DE INSERCIÓN (Recursivo, evita duplicados)
+// ALGORITMO DE INSERCIÃ“N
 Nodo* insertar(Nodo* raiz, int id, string nombre, string rol) {
-    if (raiz == NULL) {
-        return new Nodo(id, nombre, rol);
-    }
-    if (id < raiz->id) {
-        raiz->izquierdo = insertar(raiz->izquierdo, id, nombre, rol);
-    } else if (id > raiz->id) {
-        raiz->derecho = insertar(raiz->derecho, id, nombre, rol);
-    } else {
-        cout << "[Aviso] ID " << id << " ya existe. Insercion rechazada para evitar duplicidad.\n";
-    }
+    if (raiz == NULL) return new Nodo(id, nombre, rol);
+    if (id < raiz->id) raiz->izquierdo = insertar(raiz->izquierdo, id, nombre, rol);
+    else if (id > raiz->id) raiz->derecho = insertar(raiz->derecho, id, nombre, rol);
     return raiz;
 }
 
-// ALGORITMO DE BÚSQUEDA (Devuelve el puntero al nodo si lo encuentra)
+// ALGORITMO DE BÃšSQUEDA
 Nodo* buscar(Nodo* raiz, int id) {
-    if (raiz == NULL || raiz->id == id) {
-        return raiz;
-    }
-    if (id < raiz->id) {
-        return buscar(raiz->izquierdo, id);
-    }
+    if (raiz == NULL || raiz->id == id) return raiz;
+    if (id < raiz->id) return buscar(raiz->izquierdo, id);
     return buscar(raiz->derecho, id);
 }
 
-// Funciones auxiliares para la Eliminación
-Nodo* encontrarMinimo(Nodo* raiz) {
-    while (raiz && raiz->izquierdo != NULL) {
-        raiz = raiz->izquierdo;
-    }
-    return raiz;
+// --- NUEVA VISTA VISUAL PIRAMIDAL ---
+int obtenerAltura(Nodo* raiz) {
+    if (raiz == NULL) return 0;
+    return 1 + max(obtenerAltura(raiz->izquierdo), obtenerAltura(raiz->derecho));
 }
 
-// ALGORITMO DE ELIMINACIÓN (Maneja los 3 escenarios planteados)
-Nodo* eliminar(Nodo* raiz, int id) {
-    if (raiz == NULL) return raiz;
-
-    if (id < raiz->id) {
-        raiz->izquierdo = eliminar(raiz->izquierdo, id);
-    } else if (id > raiz->id) {
-        raiz->derecho = eliminar(raiz->derecho, id);
-    } else {
-        // Escenario 1 y 2: Sin hijos o un solo hijo
-        if (raiz->izquierdo == NULL) {
-            Nodo* temporal = raiz->derecho;
-            delete raiz;
-            return temporal;
-        } else if (raiz->derecho == NULL) {
-            Nodo* temporal = raiz->izquierdo;
-            delete raiz;
-            return temporal;
-        }
-
-        // Escenario 3: Dos hijos (Busca el sucesor en Inorden)
-        Nodo* temporal = encontrarMinimo(raiz->derecho);
-        
-        // Copiar los datos del sucesor al nodo actual
-        raiz->id = temporal->id;
-        raiz->nombre = temporal->nombre;
-        raiz->rol = temporal->rol;
-
-        // Eliminar físicamente el sucesor original
-        raiz->derecho = eliminar(raiz->derecho, temporal->id);
-    }
-    return raiz;
-}
-
-// 2. DESARROLLO DE LA LÓGICA DE RECORRIDOS (Tus 3 consultas)
-
-// A. Consulta por Generación (Preorden Modificado con contador de nivel)
-void consultaGeneracion(Nodo* raiz, int nivelObjetivo, int nivelActual = 0) {
+void imprimirArbolPiramidal(Nodo* raiz) {
     if (raiz == NULL) return;
 
+    int altura = obtenerAltura(raiz);
+    queue<Nodo*> colaNodos;
+    colaNodos.push(raiz);
+    int nodosEnNivel = 1;
+    
+    for (int i = 0; i < altura; i++) {
+        int espaciosIniciales = pow(2, altura - i + 1) - 2;
+        int espaciosEntre = pow(2, altura - i + 2) - 3;
+
+        for (int k = 0; k < espaciosIniciales; k++) cout << " ";
+
+        int nivelActualNodos = nodosEnNivel;
+        nodosEnNivel = 0;
+        vector<Nodo*> hijosSiguienteNivel;
+
+        for (int j = 0; j < nivelActualNodos; j++) {
+            Nodo* actual = colaNodos.front();
+            colaNodos.pop();
+
+            if (actual != NULL) {
+                cout << "(" << actual->id << ")";
+                hijosSiguienteNivel.push_back(actual->izquierdo);
+                hijosSiguienteNivel.push_back(actual->derecho);
+                if (actual->izquierdo != NULL) nodosEnNivel++;
+                if (actual->derecho != NULL) nodosEnNivel++;
+            } else {
+                cout << "     "; 
+                hijosSiguienteNivel.push_back(NULL);
+                hijosSiguienteNivel.push_back(NULL);
+            }
+
+            for (int k = 0; k < espaciosEntre - 2; k++) cout << " ";
+        }
+        cout << "\n\n"; 
+
+        for (size_t h = 0; h < hijosSiguienteNivel.size(); h++) {
+            colaNodos.push(hijosSiguienteNivel[h]);
+        }
+        if (nodosEnNivel == 0) break;
+    }
+}
+
+// 2. TUS ALGORITMOS DE CONSULTA
+void consultaGeneracion(Nodo* raiz, int nivelObjetivo, int nivelActual = 0) {
+    if (raiz == NULL) return;
     if (nivelActual == nivelObjetivo) {
         cout << "   - ID: " << raiz->id << " | " << raiz->nombre << " (" << raiz->rol << ")\n";
     }
-
     consultaGeneracion(raiz->izquierdo, nivelObjetivo, nivelActual + 1);
     consultaGeneracion(raiz->derecho, nivelObjetivo, nivelActual + 1);
 }
 
-// B. Consulta de Ancestros (Rastreo de Camino de Búsqueda)
 bool mostrarAncestros(Nodo* raiz, int idBuscado) {
     if (raiz == NULL) return false;
-
-    // Si llegamos al nodo, terminamos la recursión sin imprimirlo a él mismo (solo sus ancestros)
     if (raiz->id == idBuscado) return true;
 
-    // Si el nodo está en el camino izquierdo o derecho, este nodo actual es un ancestro
     if (mostrarAncestros(raiz->izquierdo, idBuscado) || mostrarAncestros(raiz->derecho, idBuscado)) {
         cout << " -> [" << raiz->id << ": " << raiz->nombre << " (" << raiz->rol << ")]\n";
         return true;
@@ -118,7 +110,6 @@ bool mostrarAncestros(Nodo* raiz, int idBuscado) {
     return false;
 }
 
-// Recorrido Inorden estándar para mostrar subárboles ordenados cronológicamente
 void recorrerInorden(Nodo* raiz) {
     if (raiz == NULL) return;
     recorrerInorden(raiz->izquierdo);
@@ -126,15 +117,13 @@ void recorrerInorden(Nodo* raiz) {
     recorrerInorden(raiz->derecho);
 }
 
-// C. Consulta de Descendientes (Inorden desde el Subárbol)
 void consultaDescendientes(Nodo* raiz, int idMiembro) {
     Nodo* miembro = buscar(raiz, idMiembro);
     if (miembro == NULL) {
-        cout << "Miembro no encontrado en las excavaciones.\n";
+        cout << "Miembro no encontrado.\n";
         return;
     }
-    cout << "Descendientes de " << miembro->nombre << " (excluyendo otras ramas):\n";
-    // Iniciamos el inorden únicamente desde sus dos ramas hijas
+    cout << "Descendientes de " << miembro->nombre << ":\n";
     if (miembro->izquierdo == NULL && miembro->derecho == NULL) {
         cout << "   (No posee descendientes registrados)\n";
     } else {
@@ -143,21 +132,10 @@ void consultaDescendientes(Nodo* raiz, int idMiembro) {
     }
 }
 
-// Función estética para ver el árbol rápidamente tipo carpetas
-void mostrarEstructuraVisual(Nodo* raiz, string prefijo = "", bool esIzquierdo = false) {
-    if (raiz == NULL) return;
-    cout << prefijo << (esIzquierdo ? "+-- " : "+-- ") << raiz->id << " (" << raiz->rol << ")\n";
-    string nuevoPrefijo = prefijo + (esIzquierdo ? "¦   " : "    ");
-    if (raiz->izquierdo != NULL || raiz->derecho != NULL) {
-        if (raiz->izquierdo != NULL) mostrarEstructuraVisual(raiz->izquierdo, nuevoPrefijo, true);
-        if (raiz->derecho != NULL) mostrarEstructuraVisual(raiz->derecho, nuevoPrefijo, false);
-    }
-}
-
 int main() {
     Nodo* raiz = NULL;
 
-    // Simulando el ingreso de datos de la excavación (Añadí nombres inventados para cumplir tu estructura)
+    // Carga de la estructura arqueolÃ³gica real
     raiz = insertar(raiz, 50, "Yax K'uk' Mo'", "ancestro fundador");
     raiz = insertar(raiz, 30, "Ah Kin", "sacerdote mayor");
     raiz = insertar(raiz, 20, "Ixchel", "princesa");
@@ -165,22 +143,28 @@ int main() {
     raiz = insertar(raiz, 70, "K'an Tok", "general");
     raiz = insertar(raiz, 80, "Chilan", "astronomo");
 
-    cout << "\n============================================\n";
-    cout << "  ESTRUCTURA DE LA CIVILIZACION REGISTRADA  \n";
-    cout << "============================================\n";
-    mostrarEstructuraVisual(raiz);
+    cout << "========================================================\n";
+    cout << "          RECONSTRUCCION DEL ARBOL GENEALOGICO         \n";
+    cout << "========================================================\n\n";
+    
+    // Imprime el dibujo centrado por niveles
+    imprimirArbolPiramidal(raiz);
 
-    cout << "\n============================================\n";
-    cout << "  PRUEBA DE RECORRIDOS (TUS CONSULTAS)       \n";
-    cout << "============================================\n";
+    cout << "========================================================\n";
+    cout << "LEYENDA DE MIEMBROS REGISTRADOS:\n";
+    cout << "ID 50: Yax K'uk' Mo' (Ancestor Fundador)\n";
+    cout << "ID 30: Ah Kin (Sacerdote Mayor) | ID 70: K'an Tok (General)\n";
+    cout << "ID 20: Ixchel (Princesa)        | ID 40: Balam (Noble) | ID 80: Chilan (Astronomo)\n";
+    cout << "========================================================\n";
 
-    // 1. Prueba de Generación (Nivel 2)
-    cout << "\n1. Miembros de la Generacion 2 (Nivel 2):\n";
-    consultaGeneracion(raiz, 2);
+    cout << "\n>>> PRUEBA DE TUS CONSULTAS ARQUEOLOGICAS <<<\n";
+    cout << "\nConsultando Ancestros de la Princesa Ixchel (ID: 20):\n";
+    cout << "[Inicio]";
+    mostrarAncestros(raiz, 20);
+    cout << " -> [Raiz Principal]\n";
 
-    // 2. Prueba de Ancestros
-    cout << "\n2. Linea de ascendencia de la princesa Ixchel (ID: 20):\n";
-    cout << "[Inicio: Persona consultada]\n";
+    return 0;
+}
     mostrarAncestros(raiz, 20);
     cout << " -> [Fin: Raiz principal del arbol]\n";
 
