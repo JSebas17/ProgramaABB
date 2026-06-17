@@ -6,9 +6,6 @@
 
 using namespace std;
 
-// ============================================================================
-// MÓDULO 1: DEFINICIÓN DE ESTRUCTURAS DE DATOS
-// ============================================================================
 struct NodoMiembro {
     int id;                 
     string nombre;          
@@ -17,9 +14,8 @@ struct NodoMiembro {
     NodoMiembro* derecho;   
 };
 
-// ============================================================================
-// MÓDULO 2: GESTIÓN DE MEMORIA Y CREACIÓN DE NODOS
-// ============================================================================
+
+//GESTIÓN DE MEMORIA Y CREACIÓN DE NODOS
 NodoMiembro* crearNodo(int id, string nombre, string rol) {
     NodoMiembro* nuevo = new NodoMiembro();
     nuevo->id = id;
@@ -30,9 +26,7 @@ NodoMiembro* crearNodo(int id, string nombre, string rol) {
     return nuevo;
 }
 
-// ============================================================================
-// MÓDULO 3: OPERACIONES FUNDAMENTALES DEL ABB
-// ============================================================================
+// OPERACIONES FUNDAMENTALES DEL ABB
 
 bool insertarNodo(NodoMiembro*& raiz, int id, string nombre, string rol) {
     if (raiz == NULL) {
@@ -103,10 +97,7 @@ NodoMiembro* eliminarNodo(NodoMiembro* raiz, int id, bool& encontrado) {
     return raiz;
 }
 
-// ============================================================================
-// MÓDULO 4: RECORRIDOS Y CONSULTAS ESPECIALIZADAS
-// ============================================================================
-
+// RECORRIDOS Y CONSULTAS ESPECIALIZADAS
 void recorridoInorden(NodoMiembro* raiz) {
     if (raiz == NULL) return;
     recorridoInorden(raiz->izquierdo);
@@ -150,15 +141,11 @@ void consultaDescendientes(NodoMiembro* raiz, int idAncestro) {
     }
 }
 
-// --- NUEVAS FUNCIONES PARA LA IMPRESIÓN NORMAL DE ARRIBA HACIA ABAJO ---
-
-// Auxiliar para saber que tan alto es el arbol y calcular espacios angulares
 int obtenerAltura(NodoMiembro* raiz) {
     if (raiz == NULL) return 0;
     return 1 + max(obtenerAltura(raiz->izquierdo), obtenerAltura(raiz->derecho));
 }
 
-// Dibuja el arbol de forma piramidal usando una cola (BFS)
 void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
     if (raiz == NULL) {
         cout << "\nEl arbol esta vacio actualmente.\n";
@@ -172,11 +159,9 @@ void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
     int maxNodosNivel = 1; 
     
     for (int nivel = 0; nivel < altura; nivel++) {
-        // Calculo de espacios de separacion dinamicos
         int espaciosAntes = pow(2, altura - nivel) - 2;
         int espaciosEntre = pow(2, altura - nivel + 1) - 3;
 
-        // Imprimir margen izquierdo
         for (int i = 0; i < espaciosAntes; i++) cout << " ";
 
         queue<NodoMiembro*> colaSiguiente;
@@ -186,32 +171,27 @@ void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
             colaActual.pop();
 
             if (actual != NULL) {
-                // Imprime el ID con formato limpio de 2 digitos
                 if(actual->id < 10) cout << "0" << actual->id;
                 else cout << actual->id;
                 
                 colaSiguiente.push(actual->izquierdo);
                 colaSiguiente.push(actual->derecho);
             } else {
-                cout << "--"; // Representa un espacio vacio o nulo de forma simetrica
+                cout << "--"; 
                 colaSiguiente.push(NULL);
                 colaSiguiente.push(NULL);
             }
 
-            // Imprimir espacios intermedios entre nodos del mismo nivel
             for (int j = 0; j < espaciosEntre; j++) cout << " ";
         }
         
-        cout << "\n\n"; // Doble salto de linea para separar las generaciones
+        cout << "\n\n"; /
         colaActual = colaSiguiente;
         maxNodosNivel *= 2;
     }
     cout << "* Nota: '--' representa una rama vacia (puntero NULL) para mantener la simetria.\n";
 }
 
-// ============================================================================
-// FUNCIÓN PRINCIPAL CON MENÚ INTERACTIVO DINÁMICO
-// ============================================================================
 int main() {
     NodoMiembro* raiz = NULL;
     int opcion, id, nivel;
