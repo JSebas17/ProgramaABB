@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
 #include <cstdlib> // Para system("cls") y system("pause")
-#include <queue>   // Estructura necesaria para el recorrido por niveles (Normal)
-#include <cmath>   // Para calcular los espacios matematicos con pow()
+#include <queue>   // Estructura necesaria para el recorrido por niveles
+#include <cmath>   // Para calcular los espacios matemáticos con pow()
+#include <limits>  // Necesario para limpiar por completo el buffer de cin
 
 using namespace std;
 
@@ -14,8 +15,6 @@ struct NodoMiembro {
     NodoMiembro* derecho;   
 };
 
-
-//GESTIÓN DE MEMORIA Y CREACIÓN DE NODOS
 NodoMiembro* crearNodo(int id, string nombre, string rol) {
     NodoMiembro* nuevo = new NodoMiembro();
     nuevo->id = id;
@@ -26,7 +25,6 @@ NodoMiembro* crearNodo(int id, string nombre, string rol) {
     return nuevo;
 }
 
-// OPERACIONES FUNDAMENTALES DEL ABB
 
 bool insertarNodo(NodoMiembro*& raiz, int id, string nombre, string rol) {
     if (raiz == NULL) {
@@ -97,7 +95,7 @@ NodoMiembro* eliminarNodo(NodoMiembro* raiz, int id, bool& encontrado) {
     return raiz;
 }
 
-// RECORRIDOS Y CONSULTAS ESPECIALIZADAS
+
 void recorridoInorden(NodoMiembro* raiz) {
     if (raiz == NULL) return;
     recorridoInorden(raiz->izquierdo);
@@ -192,11 +190,23 @@ void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
     cout << "* Nota: '--' representa una rama vacia (puntero NULL) para mantener la simetria.\n";
 }
 
+// FUNCIÓN AUXILIAR DE VALIDACIÓN DE ENTRADAS NUMÉRICAS
+int pedirEnteroValido() {
+    int numero;
+    while (!(cin >> numero)) {
+        cin.clear(); 
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+        cout << "[!] Error de formato. Ingrese unicamente un numero entero valido: ";
+    }
+    return numero;
+}
+
 int main() {
     NodoMiembro* raiz = NULL;
     int opcion, id, nivel;
     string nombre, rol;
     bool exito;
+
 
     do {
         system("cls"); 
@@ -214,17 +224,22 @@ int main() {
         cout << " 9. Salir del programa\n";
         cout << "=======================================================\n";
         cout << " Seleccione una opcion: ";
-        cin >> opcion;
+        
+        opcion = pedirEnteroValido(); 
 
         switch (opcion) {
             case 1:
                 system("cls");
                 cout << "--- REGISTRO DE NUEVO MIEMBRO ---\n\n";
                 cout << "Ingrese ID cronologico (Clave numerica): ";
-                cin >> id;
-                cin.ignore(); 
+                id = pedirEnteroValido(); 
+                
+                // CRUCIAL: Limpiamos por completo el buffer descartando el salto de linea ('\n')
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+                
                 cout << "Ingrese Nombre historico/runico: ";
                 getline(cin, nombre);
+                
                 cout << "Ingrese Rol/Estamento social: ";
                 getline(cin, rol);
                 
@@ -239,7 +254,7 @@ int main() {
                 system("cls");
                 cout << "--- BUSQUEDA DE REGISTROS ARQUEOLOGICOS ---\n\n";
                 cout << "Ingrese el ID a buscar: ";
-                cin >> id;
+                id = pedirEnteroValido();
                 {
                     NodoMiembro* encontrado = buscarNodo(raiz, id);
                     if (encontrado != NULL) {
@@ -257,7 +272,7 @@ int main() {
                 system("cls");
                 cout << "--- ELIMINACION Y REESTRUCTURACION ---\n\n";
                 cout << "Ingrese el ID del miembro a eliminar: ";
-                cin >> id;
+                id = pedirEnteroValido();
                 exito = false;
                 raiz = eliminarNodo(raiz, id, exito);
                 if (exito) {
@@ -287,7 +302,7 @@ int main() {
                 system("cls");
                 cout << "--- CONSULTA FILTRADA POR GENERACION ---\n\n";
                 cout << "Ingrese el nivel de generacion a consultar (Raiz = 0): ";
-                cin >> nivel;
+                nivel = pedirEnteroValido();
                 cout << "\nMiembros pertenecientes a la generacion " << nivel << ":\n";
                 exito = false;
                 consultaPorGeneracion(raiz, nivel, 0, exito);
@@ -300,7 +315,7 @@ int main() {
                 system("cls");
                 cout << "--- RASTREO DE ANCESTROS DIRECTOS ---\n\n";
                 cout << "Ingrese el ID del miembro objetivo: ";
-                cin >> id;
+                id = pedirEnteroValido();
                 cout << "\nCamino ascendente de ancestros:\n";
                 if (!rastrearAncestros(raiz, id)) {
                     cout << " -> El ID no existe o es la propia raiz.\n";
@@ -310,7 +325,8 @@ int main() {
             case 8:
                 system("cls");
                 cout << "--- CONSULTA DE DESCENDENCIA DE SUBARBOL ---\n\n";
-                cin >> id;
+                cout << "Ingrese el ID del ancestro base: ";
+                id = pedirEnteroValido();
                 cout << "\n";
                 consultaDescendientes(raiz, id);
                 break;
