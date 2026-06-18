@@ -185,7 +185,7 @@ void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
             for (int j = 0; j < espaciosEntre; j++) cout << " ";
         }
         
-        cout << "\n\n"; /
+        cout << "\n\n"; 
         colaActual = colaSiguiente;
         maxNodosNivel *= 2;
     }
