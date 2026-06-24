@@ -1,9 +1,10 @@
 #include <iostream>
 #include <string>
-#include <cstdlib> // Para system("cls") y system("pause")
+#include <cstdlib> // Para system("pause") y system("cls")
 #include <queue>   // Estructura necesaria para el recorrido por niveles
 #include <cmath>   // Para calcular los espacios matemáticos con pow()
 #include <limits>  // Necesario para limpiar por completo el buffer de cin
+#include <iomanip> // Para formatear la salida con ceros a la izquierda (setw)
 
 using namespace std;
 
@@ -24,7 +25,6 @@ NodoMiembro* crearNodo(int id, string nombre, string rol) {
     nuevo->derecho = NULL;
     return nuevo;
 }
-
 
 bool insertarNodo(NodoMiembro*& raiz, int id, string nombre, string rol) {
     if (raiz == NULL) {
@@ -95,11 +95,10 @@ NodoMiembro* eliminarNodo(NodoMiembro* raiz, int id, bool& encontrado) {
     return raiz;
 }
 
-
 void recorridoInorden(NodoMiembro* raiz) {
     if (raiz == NULL) return;
     recorridoInorden(raiz->izquierdo);
-    cout << "[" << raiz->id << " - " << raiz->nombre << " (" << raiz->rol << ")]\n";
+    cout << " -> ID: " << raiz->id << " - " << raiz->nombre << " (" << raiz->rol << ")\n";
     recorridoInorden(raiz->derecho);
 }
 
@@ -144,59 +143,74 @@ int obtenerAltura(NodoMiembro* raiz) {
     return 1 + max(obtenerAltura(raiz->izquierdo), obtenerAltura(raiz->derecho));
 }
 
-void mostrarArbolNormalPorNiveles(NodoMiembro* raiz) {
-    if (raiz == NULL) {
+// VISUALIZACIÓN VERTICAL CORREGIDA PARA MOSTRAR IDs COMPLETOS (HASTA 3 DÍGITOS)
+void mostrarArbolNormalPorNiveles(NodoMiembro* r) {
+    if (r == NULL) {
         cout << "\nEl arbol esta vacio actualmente.\n";
         return;
     }
 
-    int altura = obtenerAltura(raiz);
-    queue<NodoMiembro*> colaActual;
-    colaActual.push(raiz);
+    int altura = obtenerAltura(r);
+    queue<NodoMiembro*> q;
+    q.push(r);
 
-    int maxNodosNivel = 1; 
-    
     for (int nivel = 0; nivel < altura; nivel++) {
-        int espaciosAntes = pow(2, altura - nivel) - 2;
-        int espaciosEntre = pow(2, altura - nivel + 1) - 3;
+        // 1. Imprimir las líneas de conexión vertical
+        if (nivel > 0) {
+            int espAntesCon = pow(2, altura - nivel + 1) - 1;
+            int espEntreCon = pow(2, altura - nivel + 2) - 3;
+            
+            for (int i = 0; i < espAntesCon; i++) cout << " ";
+            
+            for (int i = 0; i < pow(2, nivel - 1); i++) {
+                cout << "/   \\";
+                for (int j = 0; j < espEntreCon - 2; j++) cout << " ";
+            }
+            cout << "\n";
+        }
 
-        for (int i = 0; i < espaciosAntes; i++) cout << " ";
+        // 2. Imprimir los nodos con formato fijo de 3 espacios
+        int espAntes = pow(2, altura - nivel + 1) - 2;
+        int espEntre = pow(2, altura - nivel + 2) - 3;
 
-        queue<NodoMiembro*> colaSiguiente;
+        for (int i = 0; i < espAntes; i++) cout << " ";
 
-        for (int i = 0; i < maxNodosNivel; i++) {
-            NodoMiembro* actual = colaActual.front();
-            colaActual.pop();
+        int nodosEnNivel = pow(2, nivel);
+        queue<NodoMiembro*> siguienteQ;
+
+        for (int i = 0; i < nodosEnNivel; i++) {
+            NodoMiembro* actual = q.front();
+            q.pop();
 
             if (actual != NULL) {
-                if(actual->id < 10) cout << "0" << actual->id;
-                else cout << actual->id;
-                
-                colaSiguiente.push(actual->izquierdo);
-                colaSiguiente.push(actual->derecho);
+                // Rellena con ceros a la izquierda si el número es menor a 100 (Ej: 005, 080, 125)
+                cout << setfill('0') << setw(3) << actual->id;
+
+                siguienteQ.push(actual->izquierdo);
+                siguienteQ.push(actual->derecho);
             } else {
-                cout << "--"; 
-                colaSiguiente.push(NULL);
-                colaSiguiente.push(NULL);
+                cout << "---"; // Mantiene simetría de 3 caracteres para nodos vacíos
+                siguienteQ.push(NULL);
+                siguienteQ.push(NULL);
             }
 
-            for (int j = 0; j < espaciosEntre; j++) cout << " ";
+            for (int j = 0; j < espEntre - 2; j++) cout << " ";
         }
-        
+
         cout << "\n\n"; 
-        colaActual = colaSiguiente;
-        maxNodosNivel *= 2;
+        q = siguienteQ;
     }
-    cout << "* Nota: '--' representa una rama vacia (puntero NULL) para mantener la simetria.\n";
+    cout << setfill(' '); // Reestablece el relleno por defecto de la consola
+    cout << "* Nota: Los numeros representan el ID del miembro. Use la opcion 5 para ver detalles completos.\n";
 }
 
-// FUNCIÓN AUXILIAR DE VALIDACIÓN DE ENTRADAS NUMÉRICAS
+// FUNCIÓN AUXILIAR DE VALIDACIÓN
 int pedirEnteroValido() {
     int numero;
-    while (!(cin >> numero)) {
+    while (!(cin >> numero) || numero < 0) {
         cin.clear(); 
         cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
-        cout << "[!] Error de formato. Ingrese unicamente un numero entero valido: ";
+        cout << "[!] Error. Ingrese unicamente un numero entero positivo: ";
     }
     return numero;
 }
@@ -207,21 +221,22 @@ int main() {
     string nombre, rol;
     bool exito;
 
+    system("cls"); 
 
     do {
-        system("cls"); 
-        cout << "=======================================================\n";
+        cout << "\n=======================================================\n";
         cout << "     SISTEMA DINAMICO DE LINAJES ARQUEOLOGICOS (ABB)   \n";
         cout << "=======================================================\n";
         cout << " 1. Insertar nuevo miembro de la civilizacion\n";
         cout << " 2. Buscar miembro por ID\n";
         cout << " 3. Eliminar miembro (Reestructuracion automatica)\n";
-        cout << " 4. Mostrar estructura NORMAL del Arbol (De arriba a abajo)\n";
+        cout << " 4. Mostrar estructura VERTICAL del Arbol\n";
         cout << " 5. Listar Cronologia Dinastica (Inorden)\n";
         cout << " 6. Consultar miembros por Generacion (Nivel)\n";
         cout << " 7. Rastrear Ancestros de un miembro\n";
         cout << " 8. Consultar Descendientes de una sublinea\n";
-        cout << " 9. Salir del programa\n";
+        cout << " 9. Limpiar historial de la pantalla\n"; 
+        cout << " 10. Salir del programa\n";
         cout << "=======================================================\n";
         cout << " Seleccione una opcion: ";
         
@@ -229,17 +244,12 @@ int main() {
 
         switch (opcion) {
             case 1:
-                system("cls");
-                cout << "--- REGISTRO DE NUEVO MIEMBRO ---\n\n";
-                cout << "Ingrese ID cronologico (Clave numerica): ";
+                cout << "\n--- REGISTRO DE NUEVO MIEMBRO ---\n";
+                cout << "Ingrese ID cronologico: ";
                 id = pedirEnteroValido(); 
-                
-                // CRUCIAL: Limpiamos por completo el buffer descartando el salto de linea ('\n')
                 cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
-                
                 cout << "Ingrese Nombre historico/runico: ";
                 getline(cin, nombre);
-                
                 cout << "Ingrese Rol/Estamento social: ";
                 getline(cin, rol);
                 
@@ -251,8 +261,7 @@ int main() {
                 break;
 
             case 2:
-                system("cls");
-                cout << "--- BUSQUEDA DE REGISTROS ARQUEOLOGICOS ---\n\n";
+                cout << "\n--- BUSQUEDA DE REGISTROS ARQUEOLOGICOS ---\n";
                 cout << "Ingrese el ID a buscar: ";
                 id = pedirEnteroValido();
                 {
@@ -269,8 +278,7 @@ int main() {
                 break;
 
             case 3:
-                system("cls");
-                cout << "--- ELIMINACION Y REESTRUCTURACION ---\n\n";
+                cout << "\n--- ELIMINACION Y REESTRUCTURACION ---\n";
                 cout << "Ingrese el ID del miembro a eliminar: ";
                 id = pedirEnteroValido();
                 exito = false;
@@ -283,14 +291,12 @@ int main() {
                 break;
 
             case 4:
-                system("cls");
-                cout << "--- REPRESENTACION DEL ARBOL BINARIO (VISTA TRADICIONAL) ---\n\n";
+                cout << "\n--- REPRESENTACION VERTICAL DEL ARBOL ---\n\n";
                 mostrarArbolNormalPorNiveles(raiz);
                 break;
 
             case 5:
-                system("cls");
-                cout << "--- CRONOLOGIA DINASTICA GENERADA (INORDEN) ---\n\n";
+                cout << "\n--- CRONOLOGIA DINASTICA GENERADA (INORDEN) ---\n";
                 if (raiz == NULL) {
                     cout << "El arbol esta vacio.\n";
                 } else {
@@ -299,8 +305,7 @@ int main() {
                 break;
 
             case 6:
-                system("cls");
-                cout << "--- CONSULTA FILTRADA POR GENERACION ---\n\n";
+                cout << "\n--- CONSULTA FILTRADA POR GENERACION ---\n";
                 cout << "Ingrese el nivel de generacion a consultar (Raiz = 0): ";
                 nivel = pedirEnteroValido();
                 cout << "\nMiembros pertenecientes a la generacion " << nivel << ":\n";
@@ -312,8 +317,7 @@ int main() {
                 break;
 
             case 7:
-                system("cls");
-                cout << "--- RASTREO DE ANCESTROS DIRECTOS ---\n\n";
+                cout << "\n--- RASTREO DE ANCESTROS DIRECTOS ---\n";
                 cout << "Ingrese el ID del miembro objetivo: ";
                 id = pedirEnteroValido();
                 cout << "\nCamino ascendente de ancestros:\n";
@@ -323,8 +327,7 @@ int main() {
                 break;
 
             case 8:
-                system("cls");
-                cout << "--- CONSULTA DE DESCENDENCIA DE SUBARBOL ---\n\n";
+                cout << "\n--- CONSULTA DE DESCENDENCIA DE SUBARBOL ---\n";
                 cout << "Ingrese el ID del ancestro base: ";
                 id = pedirEnteroValido();
                 cout << "\n";
@@ -333,18 +336,22 @@ int main() {
 
             case 9:
                 system("cls");
+                cout << "[Historial Limpiado]\n";
+                break;
+
+            case 10:
                 cout << "\nCerrando el Sistema Arqueologico. ¡Hasta pronto!\n\n";
                 break;
 
             default:
-                cout << "\n[Opcion Invalida] Seleccione un numero del 1 al 9.\n";
+                cout << "\n[Opcion Invalida] Seleccione un numero del 1 al 10.\n";
                 break;
         }
         cout << "\n";
-        if (opcion != 9) {
+        if (opcion != 10 && opcion != 9) {
             system("pause"); 
         }
-    } while (opcion != 9);
+    } while (opcion != 10);
 
     return 0;
 }
